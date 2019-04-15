@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Task;
+use Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -56,14 +57,26 @@ class TaskController extends Controller
     public function store(Request $request)
     {
         $task = [];
+
         foreach ($request->get('data') as $key => $data) {
-            if ($data['name'] != '_token') {
-                $task[$data['name']] = $data['value'];
-            }
-            if ($data['name'] == 'due_date') {
-                $task['due_date'] = date('Y-m-d 00:00:00', strtotime($data['value']));
+            $task[$data['name']] = $data['value'];
+
+            if ($data['name'] == 'due_date' && !is_null($data['value'])) {
+                $task['due_date'] = date('Y-m-d', strtotime($data['value']));
             }
         }
+
+        $validator = Validator::make($task, [
+            'title' => 'required',
+            'due_date' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'validator' => $validator->errors()
+            ], 400);
+        }
+
         $task['created_user_id'] = Auth::id();
         $task['order'] = Task::max('order') + 1;
 
@@ -80,7 +93,7 @@ class TaskController extends Controller
      */
     public function show($id)
     {
-        //
+        return Task::findOrFail($id);
     }
 
     /**
@@ -103,7 +116,34 @@ class TaskController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+
+        $task = Task::findOrFail($id);
+        $tmp = [];
+
+        foreach ($request->get('data') as $key => $data) {
+            $task->{$data['name']} = $data['value'];
+            $tmp[$data['name']] = $data['value'];
+
+            if ($data['name'] == 'due_date' && !is_null($data['value'])) {
+                $task->due_date = date('Y-m-d', strtotime($data['value']));
+                $tmp['due_date'] = date('Y-m-d', strtotime($data['value']));
+            }
+        }
+
+        $validator = Validator::make($tmp, [
+            'title' => 'required',
+            'due_date' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'validator' => $validator->errors()
+            ], 400);
+        }
+
+        $task->save();
+
+        return json_encode($task->toArray());
     }
 
     /**
@@ -114,6 +154,7 @@ class TaskController extends Controller
      */
     public function destroy($id)
     {
-        //
+        Task::destroy($id);
+        return $id;
     }
 }

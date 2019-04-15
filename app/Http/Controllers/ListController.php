@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lists;
+use Validator;
 use Illuminate\Http\Request;
 
 class ListController extends Controller
@@ -39,8 +40,18 @@ class ListController extends Controller
      */
     public function store(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'validator' => $validator->errors()
+            ], 400);
+        }
+
         return json_encode(Lists::create([
-            'name' => $request->get('data')
+            'name' => $request->get('name')
         ]));
     }
 
@@ -52,7 +63,7 @@ class ListController extends Controller
      */
     public function show($id)
     {
-        //
+        return Lists::findOrFail($id);
     }
 
     /**
@@ -75,7 +86,22 @@ class ListController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $list = Lists::findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'validator' => $validator->errors()
+            ], 400);
+        }
+
+        $list->name = $request->get('name');
+        $list->save();
+
+        return json_encode($list->toArray());
     }
 
     /**
@@ -86,7 +112,13 @@ class ListController extends Controller
      */
     public function destroy($id)
     {
-        Lists::destroy($id);
-        return $id;
+        $list = Lists::withCount('tasks')->findOrFail($id);
+
+        if ($list->tasks_count === 0) {
+            $list->delete();
+            return $id;
+        }
+
+        return response()->json(['error' => 'The list has tasks..'], 403);
     }
 }

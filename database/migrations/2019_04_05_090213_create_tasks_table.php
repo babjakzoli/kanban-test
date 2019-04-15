@@ -21,7 +21,7 @@ class CreateTasksTable extends Migration
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('created_user_id');
             $table->unsignedInteger('order');
-            $table->timestamp('due_date', 0)->nullable();
+            $table->date('due_date')->nullable();
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users');
