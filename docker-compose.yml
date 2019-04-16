@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  php:
+    build: .cloud/docker
+    depends_on:
+      - mysql
+    volumes:
+      - ./:/application:cached
+
+  mysql:
+    image: mysql:5.7
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_DATABASE}
+    volumes:
+      - ./db-data:/var/lib/mysql:cached
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8000:8000"
+    volumes:
+      - .cloud/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:cached
+      - ./:/application:cached
+    depends_on:
+      - php
+
+volumes:
+  db-data:
