@@ -26,5 +26,8 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # Setting locales
 RUN echo hu_HU.UTF-8 UTF-8 > /etc/locale.gen && locale-gen
 
+# Run migration
+RUN php artisan migrate
+
 # Changing Workdir
 WORKDIR /application
